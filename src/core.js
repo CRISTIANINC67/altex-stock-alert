@@ -25,16 +25,22 @@ export async function check(env, old, now = Date.now(), fetchFn = fetch) {
   const url = env.PRODUCT_URL
   const sku = url.match(/\/cpd\/([^/]+)/)[1]
 
+  // ntfy.sh refuza cererile venite direct din Cloudflare Workers (429), asa ca mesajul pleaca
+  // prin workflow-ul notify.yml din GitHub, care are topicul, tokenul si emailul in secrete.
   const notify = async (n) => {
-    const res = await fetchFn('https://ntfy.sh/', { method: 'POST', headers: env.NTFY_TOKEN ? { Authorization: `Bearer ${env.NTFY_TOKEN}` } : {}, body: JSON.stringify({ topic: env.NTFY_TOPIC, click: url, ...n }) })
-    if (!res.ok) throw new Error(`ntfy HTTP ${res.status} (token: ${env.NTFY_TOKEN ? `da, ${env.NTFY_TOKEN.length} caractere` : "nu"}): ${await res.text()}`)
+    const res = await fetchFn(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/notify.yml/dispatches`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'altex-stock-alert' },
+      body: JSON.stringify({ ref: 'main', inputs: { payload: JSON.stringify({ click: url, ...n }) } }),
+    })
+    if (!res.ok) throw new Error(`GitHub HTTP ${res.status}: ${await res.text()}`)
   }
   const alert = (price, test) => notify({
     title: env.ALERT_TITLE,
     message: `${test ? 'TEST (alerta falsa). ' : ''}${price ? `Pret: ${price} RON. ` : ''}Apasa pentru a deschide pagina produsului.`,
     priority: 5,
     actions: [{ action: 'view', label: 'Deschide pagina', url }],
-    email: env.ALERT_EMAIL || undefined,
+    email: true, // workflow-ul il inlocuieste cu adresa din secretul ALERT_EMAIL
   })
 
   let result

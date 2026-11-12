@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { check, parseStock } from '../src/core.js'
 
-const env = { PRODUCT_URL: 'https://altex.ro/x/cpd/SKU1/', ALERT_TITLE: 'T', NTFY_TOPIC: 'topic', ALERT_EMAIL: 'a@b.c' }
+const env = { PRODUCT_URL: 'https://altex.ro/x/cpd/SKU1/', ALERT_TITLE: 'T', GITHUB_REPO: 'u/r', GITHUB_TOKEN: 'gh' }
 const ld = (sku, avail) => `<script type="application/ld+json">${JSON.stringify({ '@type': 'Product', sku, offers: { availability: `https://schema.org/${avail}`, price: 99 } })}</script>`
 // produs recomandat in stoc + buton "Adauga in cos": nu trebuie sa pacaleasca detectia
 const page = (avail) => `<html>${ld('OTHER', 'InStock')}<button>Adauga in cos</button>${ld('SKU1', avail)}</html>`
@@ -10,7 +10,11 @@ const page = (avail) => `<html>${ld('OTHER', 'InStock')}<button>Adauga in cos</b
 function fake(body, status = 200) {
   const sent = []
   const fetchFn = async (url, init) => {
-    if (url.startsWith('https://ntfy.sh')) { sent.push(JSON.parse(init.body)); return new Response('ok') }
+    if (url === 'https://api.github.com/repos/u/r/actions/workflows/notify.yml/dispatches') {
+      assert.equal(init.headers.Authorization, 'Bearer gh')
+      sent.push(JSON.parse(JSON.parse(init.body).inputs.payload))
+      return new Response(null, { status: 204 })
+    }
     return new Response(body, { status })
   }
   return { sent, fetchFn }
@@ -36,7 +40,7 @@ test('in stoc: exact 3 alerte urgente, apoi liniste; dupa out -> in iar', async 
   assert.equal(f.sent[0].priority, 5)
   assert.equal(f.sent[0].click, env.PRODUCT_URL)
   assert.equal(f.sent[0].actions[0].url, env.PRODUCT_URL)
-  assert.equal(f.sent[0].email, 'a@b.c')
+  assert.equal(f.sent[0].email, true)
   assert.match(f.sent[0].message, /99 RON/)
   ;({ state } = await check(env, state, 1e12, fake(page('OutOfStock')).fetchFn))
   ;({ state } = await check(env, state, 1e12, f.fetchFn))

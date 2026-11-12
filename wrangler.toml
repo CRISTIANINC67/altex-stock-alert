@@ -17,5 +17,7 @@ id = "5dcef03103834fe288a76c909ebb353b"
 PRODUCT_URL = "https://altex.ro/telefon-apple-iphone-16-pro-max-5g-512gb-desert-titanium/cpd/SMTIP16PM5DT/"
 ALERT_TITLE = "🚨 iPhone 16 Pro Max 512GB E ÎN STOC LA ALTEX!"
 FORCE_ALERT = "false"
+GITHUB_REPO = "CRISTIANINC67/altex-stock-alert"
 
-# Secrete (NU se pun aici): wrangler secret put NTFY_TOPIC / ALERT_EMAIL
+# Secret (NU se pune aici): wrangler secret put GITHUB_TOKEN
+# Topicul ntfy, tokenul ntfy si emailul stau in GitHub Secrets (vezi .github/workflows/notify.yml)
