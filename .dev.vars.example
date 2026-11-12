@@ -1,4 +1,0 @@
-# Copiază în .dev.vars (fișier ignorat de git) pentru teste locale.
-NTFY_TOPIC=altex-iphone-xxxxxxxxxxxxxxxxxxxx
-NTFY_EMAIL=adresa-ta@example.com
-# RESEND_API_KEY=

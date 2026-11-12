@@ -1,29 +1,21 @@
 name = "altex-stock-alert"
-main = "src/worker.mjs"
-compatibility_date = "2025-01-01"
+main = "src/worker.js"
+compatibility_date = "2026-11-01"
 workers_dev = false
 
-# Verificare la fiecare minut (planul gratuit Cloudflare permite Cron Triggers).
 [triggers]
 crons = ["* * * * *"]
 
-# Loguri vizibile în dashboard-ul Cloudflare (gratuit).
 [observability]
 enabled = true
 
-# Ultima stare cunoscută a stocului. ID-ul se completează după `wrangler kv namespace create STATE`.
 [[kv_namespaces]]
 binding = "STATE"
-id = "PUNE_AICI_ID_UL_KV"
+id = "5dcef03103834fe288a76c909ebb353b"
 
-# Configurare NE-secretă. Pentru alt produs Altex schimbi doar aceste 3 valori.
 [vars]
-PRODUCT_SKU = "SMTIP16PM5DT"
 PRODUCT_URL = "https://altex.ro/telefon-apple-iphone-16-pro-max-5g-512gb-desert-titanium/cpd/SMTIP16PM5DT/"
-PRODUCT_NAME = "iPhone 16 Pro Max 512GB"
+ALERT_TITLE = "🚨 iPhone 16 Pro Max 512GB E ÎN STOC LA ALTEX!"
 FORCE_ALERT = "false"
 
-# Secrete (NU se scriu aici), se setează cu `wrangler secret put <NUME>`:
-#   NTFY_TOPIC      - numele topicului ntfy (lung, greu de ghicit)
-#   NTFY_EMAIL      - adresa pe care vrei emailul
-#   RESEND_API_KEY  - opțional, doar dacă emailul prin ntfy nu merge
+# Secrete (NU se pun aici): wrangler secret put NTFY_TOPIC / ALERT_EMAIL
