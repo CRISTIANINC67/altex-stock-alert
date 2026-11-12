@@ -1,0 +1,56 @@
+# VARIANTA DE REZERVĂ - folosită DOAR dacă Altex blochează cererile venite din Cloudflare.
+# Nu porni ambele variante în același timp.
+name: Altex stock check
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      force_alert:
+        description: "Trimite o alertă de test (FORCE_ALERT)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: altex-stock-check
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Ultima stare cunoscută (fișier de cache).
+      - name: Restore state
+        uses: actions/cache/restore@v4
+        with:
+          path: state.json
+          key: altex-state-${{ github.run_id }}
+          restore-keys: altex-state-
+
+      - name: Check stock
+        env:
+          PRODUCT_SKU: ${{ vars.PRODUCT_SKU || 'SMTIP16PM5DT' }}
+          PRODUCT_URL: ${{ vars.PRODUCT_URL || 'https://altex.ro/telefon-apple-iphone-16-pro-max-5g-512gb-desert-titanium/cpd/SMTIP16PM5DT/' }}
+          PRODUCT_NAME: ${{ vars.PRODUCT_NAME || 'iPhone 16 Pro Max 512GB' }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_EMAIL: ${{ secrets.NTFY_EMAIL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FORCE_ALERT: ${{ inputs.force_alert && 'true' || 'false' }}
+        run: node scripts/github-check.mjs
+
+      - name: Save state
+        if: always() && hashFiles('state.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: state.json
+          key: altex-state-${{ github.run_id }}
